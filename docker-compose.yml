@@ -1,0 +1,39 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: windscope-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_NAME=WindScope — UK Wind Forecast Intelligence
+      - APP_VERSION=1.0.0
+      - DEBUG=False
+      - ELEXON_BASE_URL=https://data.elexon.co.uk/bmrs/api/v1
+      - DEFAULT_START_DATE=2026-01-01
+      - DEFAULT_END_DATE=2026-01-31
+      - DEFAULT_CUTOFF_PRESET=gate_closure
+      - DEFAULT_CUTOFF_HOURS=1.0
+      - CACHE_TTL_SECONDS=600
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8000/api/health\")' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: windscope-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+networks:
+  default:
+    name: windscope-network
